@@ -1,2 +1,2 @@
 # ProxyWriter
-CHESS Proxy writer service
+ProxyWriter service to proxy write requests to/from FOXDEN
