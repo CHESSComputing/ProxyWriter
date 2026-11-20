@@ -4,6 +4,9 @@ on:
   push:
     tags:
       - "v*" # triggers only if push new tag version, like `v0.8.4` or else
+    # Optional: keep Security tab updated on main branch pushes as well
+    # branches:
+    #   - main
 
 permissions:
   security-events: write
@@ -30,15 +33,14 @@ jobs:
       - name: Branch name
         id: branch_name
         run: |
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            TAG_VAL="${GITHUB_REF#refs/tags/}"
+          else
+            TAG_VAL="${GITHUB_REF#refs/heads/}"
+          fi
           echo "SOURCE_NAME=${GITHUB_REF#refs/*/}" >> "$GITHUB_OUTPUT"
           echo "SOURCE_BRANCH=${GITHUB_REF#refs/heads/}" >> "$GITHUB_OUTPUT"
-          echo "SOURCE_TAG=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
-
-      # - name: Echo
-      #   run: |
-      #     echo ${{ steps.branch_name.outputs.SOURCE_NAME }}
-      #     echo ${{ steps.branch_name.outputs.SOURCE_BRANCH }}
-      #     echo ${{ steps.branch_name.outputs.SOURCE_TAG }}
+          echo "SOURCE_TAG=${TAG_VAL}" >> "$GITHUB_OUTPUT"
 
       - name: Build
         env:
@@ -90,9 +92,11 @@ jobs:
           exit-code: "0"
 
       - name: Upload Trivy SARIF to GitHub Security tab
+        if: always()
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: "trivy-results.sarif"
+          category: "trivy-container-image"
 
       - name: Upload vulnerability report artifact
         if: always()
@@ -121,24 +125,21 @@ jobs:
             ghcr.io/chesscomputing/proxywriter:latest
             ghcr.io/chesscomputing/proxywriter:${{ steps.branch_name.outputs.SOURCE_TAG }}
 
-      # - name: "✏️ Generate release changelog"
-      #   uses: heinrichreimer/action-github-changelog-generator@v2.3
-      #   with:
-      #     token: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Create Release
+        if: startsWith(github.ref, 'refs/tags/')
         id: create_release
         uses: ncipollo/release-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
+          tag: ${{ steps.branch_name.outputs.SOURCE_TAG }}
+          name: Release ${{ steps.branch_name.outputs.SOURCE_TAG }}
           bodyFile: "LAST_CHANGES.md"
           draft: false
           prerelease: false
 
       - name: Upload binaries
+        if: startsWith(github.ref, 'refs/tags/')
         id: upload_binaries
         uses: actions/upload-release-asset@v1
         env:
