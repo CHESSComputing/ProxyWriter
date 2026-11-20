@@ -1,5 +1,4 @@
-FROM golang:latest as go-builder
-MAINTAINER Valentin Kuznetsov vkuznet@gmail.com
+FROM golang:latest AS go-builder
 
 # build procedure
 ENV PROJECT=ProxyWriter
@@ -11,7 +10,7 @@ ARG CGO_ENABLED=0
 RUN cd $PROJECT && make && cp srv /build
 
 # build final image for given image
-FROM alpine as final
+FROM alpine AS final
 # FROM gcr.io/distroless/static as final
 RUN mkdir -p /data
 COPY --from=go-builder /build/srv /data
