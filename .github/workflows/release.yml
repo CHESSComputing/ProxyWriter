@@ -45,7 +45,7 @@ jobs:
           GOPATH: /home/runner/go
         run: |
           make
-          # build_all when we will test trivy
+          # use make build_all to generate srv executables for all platforms
           #make build_all
           tar cvfz proxywriter.tar.gz srv*
 
