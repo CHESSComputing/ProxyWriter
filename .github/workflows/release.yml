@@ -44,9 +44,8 @@ jobs:
         env:
           GOPATH: /home/runner/go
         run: |
-          make
           # use make build_all to generate srv executables for all platforms
-          #make build_all
+          make build_all
           tar cvfz proxywriter.tar.gz srv*
 
       - name: Set up QEMU
