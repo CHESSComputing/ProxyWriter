@@ -43,8 +43,10 @@ jobs:
         env:
           GOPATH: /home/runner/go
         run: |
-          make build_all
-          tar cvfz frontend.tar.gz srv*
+          make
+          # build_all when we will test trivy
+          #make build_all
+          tar cvfz proxywriter.tar.gz srv*
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -60,16 +62,16 @@ jobs:
           # https://github.com/docker/for-mac/issues/6356
           # https://docs.docker.com/build/ci/github-actions/multi-platform/
           docker buildx build --platform linux/amd64 --load \
-            -t "ghcr.io/chesscomputing/frontend:${{ steps.branch_name.outputs.SOURCE_TAG }}" \
-            --label "org.opencontainers.image.description=FOXDEN Frontend service" \
-            --label "org.opencontainers.image.source=https://github.com/chesscomputing/frontend" \
+            -t "ghcr.io/chesscomputing/proxywriter:${{ steps.branch_name.outputs.SOURCE_TAG }}" \
+            --label "org.opencontainers.image.description=FOXDEN proxywriter service" \
+            --label "org.opencontainers.image.source=https://github.com/chesscomputing/proxywriter" \
             --label "org.opencontainers.image.licenses=MIT" \
             .
 
       - name: Scan image with Trivy (vulnerability report)
         uses: aquasecurity/trivy-action@v0.36.0
         with:
-          image-ref: "ghcr.io/chesscomputing/frontend:${{ steps.branch_name.outputs.SOURCE_TAG }}"
+          image-ref: "ghcr.io/chesscomputing/proxywriter:${{ steps.branch_name.outputs.SOURCE_TAG }}"
           format: "table"
           output: "trivy-report.txt"
           severity: "CRITICAL,HIGH,MEDIUM"
@@ -78,7 +80,7 @@ jobs:
       - name: Generate SARIF report for GitHub Security tab
         uses: aquasecurity/trivy-action@v0.36.0
         with:
-          image-ref: "ghcr.io/chesscomputing/frontend:${{ steps.branch_name.outputs.SOURCE_TAG }}"
+          image-ref: "ghcr.io/chesscomputing/proxywriter:${{ steps.branch_name.outputs.SOURCE_TAG }}"
           format: "sarif"
           output: "trivy-results.sarif"
           severity: "CRITICAL,HIGH,MEDIUM"
@@ -113,8 +115,8 @@ jobs:
           push: true
           platforms: linux/amd64,linux/arm64
           tags: |
-            ghcr.io/chesscomputing/frontend:latest
-            ghcr.io/chesscomputing/frontend:${{ steps.branch_name.outputs.SOURCE_TAG }}
+            ghcr.io/chesscomputing/proxywriter:latest
+            ghcr.io/chesscomputing/proxywriter:${{ steps.branch_name.outputs.SOURCE_TAG }}
 
       # - name: "✏️ Generate release changelog"
       #   uses: heinrichreimer/action-github-changelog-generator@v2.3
@@ -140,6 +142,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./frontend.tar.gz
-          asset_name: frontend.tar.gz
+          asset_path: ./proxywriter.tar.gz
+          asset_name: proxywriter.tar.gz
           asset_content_type: application/octet-stream
